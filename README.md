@@ -1,6 +1,6 @@
 # Touch camera card
 
-![The card on a Nest Hub](images/camera-card-home-light.png)
+![The card on a Nest Hub](images/camera-card-nesthub.png)
 
 A Lovelace card that puts your cameras behind its own tabs, built for touch panels and for Google Nest Hub cast dashboards at 1024×600.
 
@@ -12,9 +12,11 @@ It is made to work hand in hand with **[Frigate](https://frigate.video/)**. Any 
 
 It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-music-card) — same screen size, same thumb-first idea, and the two sit side by side as views on one dashboard.
 
-*Above: the Home tab at the 1024×600 of a Nest Hub — one large view, a column of small ones, and today's notifications beside them. Colours come from the Home Assistant theme, so it follows a dark theme just as well.*
+![The Home tab](images/camera-card-home-light.png)
 
-*A note on the screenshots: they show the real card, but with stock photos from [Unsplash](https://unsplash.com/) in place of the camera images — I would rather not put my own house and garden on the internet. On your panel the tiles show your own cameras, of course.*
+*The Home tab at the 1024×600 of a Nest Hub — one large view, a column of small ones, and today's notifications beside them. Colours come from the Home Assistant theme, so it follows a dark theme just as well.*
+
+*A note on the pictures: the Nest Hub at the top is my own, and the screenshots show the real card, but with stock photos from [Unsplash](https://unsplash.com/) in place of the camera images — I would rather not put my own house and garden on the internet. On your panel the tiles show your own cameras, of course.*
 
 ![A camera opened large](images/camera-card-large-light.png)
 
@@ -158,6 +160,42 @@ Good to know before you rely on it:
 - **`rain-24h` only exists for the Netherlands.** It is a single fixed map of the country; there is no version for anywhere else.
 
 If none of this suits you, you don't need it. **Any tile can show any camera entity or any Lovelace card instead** — your national weather service's radar image as a generic camera, a forecast card, a sensor graph — and a tab full of those works exactly the same. You don't have to have a weather tab at all.
+
+### Recipes: more weather images
+
+The tiles on the author's own weather tab, besides the built-in ones, are two ordinary camera entities. Both come from integrations that ship with Home Assistant; nothing here is part of this card.
+
+**Buienradar (the Netherlands and Belgium).** Add the [Buienradar integration](https://www.home-assistant.io/integrations/buienradar/) under Settings → Devices & services. Among other things it creates `camera.buienradar`, the current radar picture, refreshed every few minutes.
+
+**Any weather picture on the internet.** Many weather services publish a map as a plain image at a fixed address that is refreshed in place. Add the [Generic Camera](https://www.home-assistant.io/integrations/generic/) integration, paste that address as *Still image URL*, leave *Stream source* empty, and you have a camera entity. The wind map of the Dutch weather service KNMI, for example:
+
+```
+https://cdn.knmi.nl/knmi/map/page/weer/actueel-weer/windkracht.png
+```
+
+Look for the same kind of image on your own national weather service's site: right-click the map, *Copy image address*, and check that the address stays the same when the map updates.
+
+Then put them on a tab. Maps are rarely 16:9, so switch off cropping and give the real shape, and do not refresh them more often than the source changes:
+
+```yaml
+- name: Weather
+  icon: mdi:weather-partly-rainy
+  notifications: false
+  cameras:
+    - name: Rain · next 2 hours
+      weather: rain
+      large: true
+    - name: Buienradar · now
+      entity: camera.buienradar
+      crop: false
+      ratio: 550/512
+      refresh: 30
+    - name: Wind · now
+      entity: camera.knmi_wind
+      crop: false
+      ratio: 550/512
+      refresh: 300
+```
 
 ## The second card: one camera, one tile
 
