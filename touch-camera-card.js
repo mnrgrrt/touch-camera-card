@@ -826,7 +826,8 @@ class TouchCameraCard extends HTMLElement {
   }
 
   _telling() {
-    const cams = this._cams();
+    // only real camera tiles count: weather maps and card tiles have no signal to lose
+    const cams = this._cams().filter(c => c.entity && !c.kaart && !c.weer);
     const dood = cams.filter(c => !this._leeft(c)).length;
     const pers = cams.filter(c => this._niveau(c) === 'persoon').length;
     const bew = cams.filter(c => this._niveau(c) === 'beweging').length;
@@ -1442,7 +1443,7 @@ class TouchCameraCard extends HTMLElement {
     this._stopClip();
     const cam = this._cam(this._open);
     if (!cam) { this._open = null; this._tekenOverzicht(); return; }
-    const rest = this._cams().filter(c => c.entity !== cam.entity);
+    const rest = this._cams().filter(c => c.entity && !c.kaart && !c.weer && c.entity !== cam.entity);
 
     const mini = rest.map(c => {
       const n = this._niveau(c);
@@ -1737,7 +1738,7 @@ window.customCards.push({
   description: 'Cameras with their own tabs, built for touch panels and Nest Hub cast dashboards: snapshots on the tiles, MJPEG in the large view, mp4 for notifications',
 });
 
-console.info('%c touch-camera-card %c 1.0.0 ', 'background:#4aa3ff;color:#fff', '');
+console.info('%c touch-camera-card %c 1.0.1 ', 'background:#4aa3ff;color:#fff', '');
 
 
 // ---------------------------------------------------------------------------
