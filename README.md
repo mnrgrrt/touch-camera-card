@@ -8,9 +8,13 @@ It was written for a second-hand Nest Hub on a desk. Those devices are cheap now
 
 One file, two cards: **Touch camera card** for a wall of cameras with tabs, and **Touch camera tile** for a single camera between your other cards. They share the same engine.
 
+It is made to work hand in hand with **[Frigate](https://frigate.video/)**. Any camera entity will show up, but with the Frigate integration the card also lists today's motion and person events beside the images, with a thumbnail for each, and plays the clip Frigate recorded when you tap one. Frigate's occupancy sensors can colour a tile the moment something moves. It is still useful without Frigate; you just get the images without the notifications.
+
 It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-music-card) — same screen size, same thumb-first idea, and the two sit side by side as views on one dashboard.
 
 *Above: the Home tab at the 1024×600 of a Nest Hub — one large view, a column of small ones, and today's notifications beside them. Colours come from the Home Assistant theme, so it follows a dark theme just as well.*
+
+*A note on the screenshots: they show the real card, but with stock photos from [Unsplash](https://unsplash.com/) in place of the camera images — I would rather not put my own house and garden on the internet. On your panel the tiles show your own cameras, of course.*
 
 ![A camera opened large](images/camera-card-large-light.png)
 
