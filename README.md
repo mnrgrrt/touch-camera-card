@@ -246,6 +246,10 @@ Be aware that I do not maintain it actively. I work on it now and then when I ha
 
 It is one file with no build step — no npm, no bundler, no TypeScript. Open it in an editor and change what you want. That is deliberate.
 
+## How this was built
+
+To be clear about who did what: I did not write this code, [Claude](https://claude.ai) did. I am not a developer. What is mine is the idea, knowing what the card had to do on a Nest Hub, and testing every version on the real device until it was right. I had wanted a camera view like this for years and it never got made, and working with an AI is what finally made it possible. So read the source as AI-written code, and do not give me credit for the programming.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
