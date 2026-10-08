@@ -1150,8 +1150,20 @@ class TouchCameraCard extends HTMLElement {
       this._weerOndergrond(t, vak, b.ondergrond);
       this._weerPassend(t);
     }
-    // Preload, otherwise the first round stutters.
-    beelden.forEach(x => { const i = new Image(); i.src = x.src; });
+    // Load in small batches. A cast Nest Hub only runs a handful of requests at a
+    // time, so asking for the whole series at once leaves the first picture waiting
+    // behind all the others. Show frame one as soon as it is in, fetch the rest after.
+    const laad = (x) => new Promise((ok) => {
+      const i = new Image();
+      i.onload = i.onerror = () => ok();
+      i.src = x.src;
+    });
+    await laad(beelden[0]);
+    (async () => {
+      for (let i = 1; i < beelden.length; i += 4) {
+        await Promise.all(beelden.slice(i, i + 4).map(laad));
+      }
+    })();
     let k = 0;
     const toon = () => {
       const x = beelden[k];
@@ -1161,7 +1173,10 @@ class TouchCameraCard extends HTMLElement {
     };
     toon();
     if (!this._weerLopers) this._weerLopers = [];
-    this._weerLopers.push(setInterval(toon, Math.max(80, (cam.tempo || 0.35) * SEC)));
+    // The 24-hour forecast runs at half speed: an hour per frame is a bigger step
+    // than five minutes, so it needs longer on screen to be readable.
+    const tempo = cam.tempo || (this._is24(cam) ? 0.7 : 0.35);
+    this._weerLopers.push(setInterval(toon, Math.max(80, tempo * SEC)));
     // The series goes stale; fetch the index again every so often.
     const ver = Math.max(60, cam.ververs || 300) * SEC;
     this._weerLopers.push(setTimeout(() => {
@@ -1216,20 +1231,36 @@ class TouchCameraCard extends HTMLElement {
     const code = (d) => d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + p(d.getUTCHours());
     const probeer = (u) => new Promise((ok) => {
       const i = new Image();
-      const tm = setTimeout(() => ok(false), 8 * SEC);
+      const tm = setTimeout(() => ok(false), 4 * SEC);
       i.onload = () => { clearTimeout(tm); ok(true); };
       i.onerror = () => { clearTimeout(tm); ok(false); };
       i.src = u;
     });
     const uur = 3600 * SEC;
     const nu = Date.now();
+    // The newest run is a few hours old, and how many hours stays the same from one
+    // visit to the next. Remember that number, start there, and the tile no longer
+    // begins with three or four failing requests every time it opens.
+    const sleutel = 'touch-camera-card:run24';
+    let begin = 0;
+    try {
+      const w = JSON.parse(localStorage.getItem(sleutel) || 'null');
+      if (w && isFinite(w.h)) begin = Math.max(0, Number(w.h) - 1);
+    } catch (e) { /* no storage: start at the current hour */ }
+    const volgorde = [];
+    for (let h = begin; h < 12; h++) volgorde.push(h);
+    for (let h = 0; h < begin; h++) volgorde.push(h);
     let run = null;
-    for (let h = 0; h < 12 && !run; h++) {
+    for (const h of volgorde) {
       const d = new Date(Math.floor(nu / uur) * uur - h * uur);
-      if (await probeer(B + code(d) + '+001.png')) run = d;
+      if (await probeer(B + code(d) + '+001.png')) {
+        run = d;
+        try { localStorage.setItem(sleutel, JSON.stringify({ h: h })); } catch (e) { /* fine */ }
+        break;
+      }
     }
     if (!run) return null;
-    const uren = Math.min(48, Math.max(3, Number(cam.uren) || 24));
+    const uren = Math.min(48, Math.max(3, Number(cam.uren) || 12));
     const eerste = Math.max(1, Math.ceil((nu - run.getTime()) / uur));
     const laatste = Math.min(48, eerste + uren - 1);
     const uit = [];
