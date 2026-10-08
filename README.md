@@ -123,7 +123,8 @@ That is enough. Everything below is optional.
 | `person` | — | A `binary_sensor` that marks it differently for a person. |
 | `card` | — | Any Lovelace card configuration, shown in the tile instead of a camera. |
 | `weather` | — | A weather map instead of a camera: `rain` (next two hours, every 5 minutes), `rain-and-clouds` (the past hour, radar over satellite) or `rain-24h` (the next 24 hours, one picture per hour; the Netherlands only). |
-| `hours` | `24` | With `rain-24h`: how many hours ahead, up to 48. |
+| `hours` | `12` | With `rain-24h`: how many hours ahead, up to 48. |
+| `speed` | `0.35` | Seconds per frame of the animation. The `rain-24h` map runs at `0.7`, because an hour per frame is a bigger step than five minutes. |
 | `place` | your home | With `rain` and `rain-and-clouds`: where the map is centred. A place name — `Texel`, `Chamonix`, `Paris, US` (add a two-letter country code when a name exists in more countries) — or an entity with a position, such as `zone.work` or `person.anna`. Leave it out and the map centres on the home location set in Home Assistant. |
 | `latitude`, `longitude` | — | The same as `place`, as exact coordinates. These win when both are given. |
 | `zoom` | `8` | With `rain` and `rain-and-clouds`: how far in. 7 shows a larger region, 9 a smaller one. |
