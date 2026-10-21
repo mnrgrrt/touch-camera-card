@@ -453,6 +453,32 @@ function ctcGeheel(v, standaard, max) {
   return Number.isFinite(n) && n >= 1 && n <= max ? String(Math.floor(n)) : standaard;
 }
 
+// Sizes and the accent colour from the configuration are written into CSS custom
+// properties. Such a property swallows almost any token, so a value is only passed
+// on when it has the shape it is supposed to have; anything else is left unset and
+// the stylesheet's own default stands.
+function ctcGetal(v, min, max) {
+  // Number(null), Number('') and Number(true) all give a number, which would turn
+  // a key left empty in the YAML into a real setting. Those are not numbers.
+  if (v == null || typeof v === 'boolean') return null;
+  if (typeof v === 'string' && v.trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= min && n <= max ? n : null;
+}
+
+function ctcKleur(v) {
+  const t = String(v == null ? '' : v).trim();
+  // #rgb, #rgba, #rrggbb, #rrggbbaa
+  if (/^#[0-9a-fA-F]+$/.test(t) && [4, 5, 7, 9].indexOf(t.length) >= 0) return t;
+  // a plain colour name: red, steelblue, transparent
+  if (/^[a-zA-Z]{3,20}$/.test(t)) return t;
+  // rgb()/rgba()/hsl()/hsla() with nothing but numbers and separators inside
+  if (/^(rgb|rgba|hsl|hsla)\([0-9.,%\s\/]+\)$/.test(t)) return t;
+  // a reference to another theme variable
+  if (/^var\(--[a-zA-Z0-9_-]+\)$/.test(t)) return t;
+  return null;
+}
+
 function ctcHernoem(o, map) {
   if (!o || typeof o !== 'object') return o;
   const uit = {};
@@ -628,13 +654,17 @@ class TouchCameraCard extends HTMLElement {
     this.shadowRoot.innerHTML = '<style>' + CSS + '</style><div class="laag'
       + (c.kaal ? ' kaal' : '') + (c.grijs ? ' grijs' : '') + '"></div>';
     this._laag = this.shadowRoot.querySelector('.laag');
-    if (c.rondte != null) this.style.setProperty('--cc-r', c.rondte + 'px');
-    if (c.rand != null) this.style.setProperty('--cc-rand', c.rand + 'px');
-    if (c.hoogte) this.style.setProperty('--cc-h', c.hoogte + 'px');
-    if (c.accent) this.style.setProperty('--acc', c.accent);
-    if (c.melding_breedte) this.style.setProperty('--mb', c.melding_breedte + 'px');
-    if (c.beeld_schaal) this.style.setProperty('--beeld', String(c.beeld_schaal));
-    if (c.tussenruimte != null) this.style.setProperty('--gat', c.tussenruimte + 'px');
+    // Only set what passes inspection; a rejected value leaves the property alone.
+    const zet = (naam, waarde) => { if (waarde != null) this.style.setProperty(naam, waarde); };
+    const px = (v, min, max) => { const n = ctcGetal(v, min, max); return n == null ? null : n + 'px'; };
+    zet('--cc-r', px(c.rondte, 0, 200));
+    zet('--cc-rand', px(c.rand, 0, 100));
+    zet('--cc-h', px(c.hoogte, 100, 4000));
+    zet('--acc', ctcKleur(c.accent));
+    zet('--mb', px(c.melding_breedte, 40, 1000));
+    const schaal = ctcGetal(c.beeld_schaal, 0.1, 10);
+    zet('--beeld', schaal == null ? null : String(schaal));
+    zet('--gat', px(c.tussenruimte, 0, 200));
     this._pasThemaToe();
     this._teken();
     this._haalMeldingen();
