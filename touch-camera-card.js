@@ -424,6 +424,35 @@ function ctcT(taal, sleutel, arg) {
   return typeof v === 'function' ? v(arg) : (v === undefined ? sleutel : v);
 }
 
+// Everything below that builds HTML as a string puts configuration values and
+// Frigate event data into it. Those are not ours: a camera name with a < in it
+// breaks the card, and markup in any of them would run inside the Home Assistant
+// frontend with the logged-in user's session. So every interpolated value goes
+// through ctcEsc first. The editor part of this file builds its elements with
+// createElement/textContent and needs none of this.
+function ctcEsc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// An aspect ratio ends up inside a style attribute, where escaping alone still
+// leaves room for other CSS. Only the shape a ratio can have is allowed through;
+// anything else falls back to the default.
+function ctcVerhouding(v, standaard) {
+  const t = String(v == null ? '' : v).trim();
+  return /^[0-9]+(\.[0-9]+)?\s*[\/:]\s*[0-9]+(\.[0-9]+)?$/.test(t) ? t : standaard;
+}
+
+// The number of grid columns is written into a style attribute too.
+function ctcGeheel(v, standaard, max) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 1 && n <= max ? String(Math.floor(n)) : standaard;
+}
+
 function ctcHernoem(o, map) {
   if (!o || typeof o !== 'object') return o;
   const uit = {};
@@ -812,8 +841,11 @@ class TouchCameraCard extends HTMLElement {
   _verversStatus() {
     if (this._clip || !this._laag) return;
     this._cams().forEach(cam => {
-      const el = this._laag.querySelector('.tegel[data-cam="' + cam.entity + '"]')
-              || this._laag.querySelector('.mini[data-cam="' + cam.entity + '"]');
+      // The attribute is written escaped, so look it up on the raw value through
+      // CSS.escape: a name with a quote in it would otherwise break the selector.
+      const sleutel = window.CSS && CSS.escape ? CSS.escape(cam.entity) : cam.entity;
+      const el = this._laag.querySelector('.tegel[data-cam="' + sleutel + '"]')
+              || this._laag.querySelector('.mini[data-cam="' + sleutel + '"]');
       if (!el) return;
       const n = this._niveau(cam);
       el.classList.toggle('beweging', n === 'beweging');
@@ -844,8 +876,8 @@ class TouchCameraCard extends HTMLElement {
     return '<div class="tabs">'
       + this._cfg.tabs.map((t, i) =>
           '<button data-t="' + i + '" class="' + (i === this._tab ? 'on' : '') + '">'
-          + (t.icon ? '<ha-icon icon="' + t.icon + '"></ha-icon>' : '')
-          + '<span>' + (t.naam || ('Tab ' + (i + 1))) + '</span></button>').join('')
+          + (t.icon ? '<ha-icon icon="' + ctcEsc(t.icon) + '"></ha-icon>' : '')
+          + '<span>' + ctcEsc(t.naam || ('Tab ' + (i + 1))) + '</span></button>').join('')
       + '<span class="telling">' + this._telling() + '</span></div>';
   }
 
@@ -874,48 +906,48 @@ class TouchCameraCard extends HTMLElement {
       // three images of the same size, stacked.
       const W = 'https://www.weerplaza.nl/Content/Images/Radar/';
       return '<div class="tegel weertegel w24 vrij' + (isHoofd ? ' hoofdtegel' : '')
-        + '" data-cam="' + this._tsleutel(cam) + '"'
-        + ' style="--vh:' + (cam.verhouding || '700/765') + '">'
+        + '" data-cam="' + ctcEsc(this._tsleutel(cam)) + '"'
+        + ' style="--vh:' + ctcVerhouding(cam.verhouding, '700/765') + '">'
         + '<div class="wkaart">'
         + '<img class="w24b" src="' + W + 'Radar-1050-v2.jpg" alt="">'
         + '<img class="wlaag" alt="">'
         + '<img class="w24b" src="' + W + 'Radar-1050-borders-v2.png" alt="">'
         + '</div>'
         + '<div class="wtijd"></div>'
-        + (cam.naam ? '<div class="label">' + cam.naam + '</div>' : '') + '</div>';
+        + (cam.naam ? '<div class="label">' + ctcEsc(cam.naam) + '</div>' : '') + '</div>';
     }
     if (cam.weer) {
       return '<div class="tegel weertegel vrij' + (isHoofd ? ' hoofdtegel' : '')
-        + '" data-cam="' + this._tsleutel(cam) + '"'
-        + ' style="--vh:' + (cam.verhouding || '1/1') + '">'
+        + '" data-cam="' + ctcEsc(this._tsleutel(cam)) + '"'
+        + ' style="--vh:' + ctcVerhouding(cam.verhouding, '1/1') + '">'
         + '<div class="wkaart"><div class="wveld">'
         + '<div class="wbasis"></div>'
         + '<img class="wlaag" alt="">'
         + '<div class="wnamen"></div>'
         + '</div></div>'
         + '<div class="wtijd"></div>'
-        + (cam.naam ? '<div class="label">' + cam.naam + '</div>' : '') + '</div>';
+        + (cam.naam ? '<div class="label">' + ctcEsc(cam.naam) + '</div>' : '') + '</div>';
     }
     // A tile may also be an ordinary Lovelace card: handy for a forecast or a
     // meter reading in between the camera images.
     if (cam.kaart) {
       return '<div class="tegel kaartje vrij' + (isHoofd ? ' hoofdtegel' : '')
-        + '" data-cam="' + this._tsleutel(cam) + '"'
-        + (cam.verhouding ? ' style="--vh:' + cam.verhouding + '"' : '') + '>'
+        + '" data-cam="' + ctcEsc(this._tsleutel(cam)) + '"'
+        + (cam.verhouding ? ' style="--vh:' + ctcVerhouding(cam.verhouding, '16/9') + '"' : '') + '>'
         + '<div class="kaartvak"></div>'
-        + (cam.naam ? '<div class="label">' + cam.naam + '</div>' : '') + '</div>';
+        + (cam.naam ? '<div class="label">' + ctcEsc(cam.naam) + '</div>' : '') + '</div>';
     }
     const n = this._niveau(cam);
     const binnen = this._leeft(cam)
-      ? '<img data-cam="' + cam.entity + '" src="' + this._snap(cam) + '" alt="">'
+      ? '<img data-cam="' + ctcEsc(cam.entity) + '" src="' + ctcEsc(this._snap(cam)) + '" alt="">'
       : '<div class="leeg"><ha-icon icon="mdi:video-off-outline"></ha-icon><span>' + this._t('signal') + '</span></div>';
     return '<div class="tegel' + (n ? ' ' + n : '') + (cam.bijsnijden === false ? ' vrij' : '')
       + (isHoofd ? ' hoofdtegel' : '')
-      + '" data-cam="' + cam.entity + '"'
-      + (cam.verhouding ? ' style="--vh:' + cam.verhouding + '"' : '') + '>'
+      + '" data-cam="' + ctcEsc(cam.entity) + '"'
+      + (cam.verhouding ? ' style="--vh:' + ctcVerhouding(cam.verhouding, '16/9') + '"' : '') + '>'
       + binnen
       + '<div class="stip" style="display:' + (n ? '' : 'none') + '"></div>'
-      + (cam.naam ? '<div class="label">' + cam.naam + '</div>' : '') + '</div>';
+      + (cam.naam ? '<div class="label">' + ctcEsc(cam.naam) + '</div>' : '') + '</div>';
   }
 
   _tekenOverzicht() {
@@ -946,7 +978,7 @@ class TouchCameraCard extends HTMLElement {
     const rst = tabblad.raster;
     const overig = !rest.length ? ''
       : rst
-        ? '<div class="kolom overig raster" style="--kk:' + rst + '">'
+        ? '<div class="kolom overig raster" style="--kk:' + ctcGeheel(rst, '2', 8) + '">'
           + rest.map(c => this._tegelHtml(c)).join('') + '</div>'
         : '<div class="kolom overig" style="--no:' + rest.length + '">'
           + rest.map(c => this._tegelHtml(c)).join('') + '</div>';
@@ -1424,9 +1456,9 @@ class TouchCameraCard extends HTMLElement {
     if (!this._meldingen.length) return '<div class="mleeg">' + this._t('nothing') + '</div>';
     return this._meldingen.map((m, i) =>
       '<button class="melding" data-i="' + i + '">'
-      + '<img src="' + m.thumb + '" alt="" loading="lazy">'
-      + '<div class="mtxt"><div class="b1">' + m.naam + '</div>'
-      + '<div class="b2">' + m.tijd + ' · ' + (m.wat || this._t('event')) + '</div></div></button>').join('');
+      + '<img src="' + ctcEsc(m.thumb) + '" alt="" loading="lazy">'
+      + '<div class="mtxt"><div class="b1">' + ctcEsc(m.naam) + '</div>'
+      + '<div class="b2">' + ctcEsc(m.tijd) + ' · ' + ctcEsc(m.wat || this._t('event')) + '</div></div></button>').join('');
   }
 
   _knoopMeldingen() {
@@ -1479,17 +1511,17 @@ class TouchCameraCard extends HTMLElement {
     const mini = rest.map(c => {
       const n = this._niveau(c);
       const binnen = this._leeft(c)
-        ? '<img data-cam="' + c.entity + '" data-rol="mini" src="' + this._snap(c) + '" alt="">'
+        ? '<img data-cam="' + ctcEsc(c.entity) + '" data-rol="mini" src="' + ctcEsc(this._snap(c)) + '" alt="">'
         : '<div class="leeg"><ha-icon icon="mdi:video-off-outline"></ha-icon></div>';
-      return '<div class="mini' + (n ? ' ' + n : '') + '" data-cam="' + c.entity + '">'
+      return '<div class="mini' + (n ? ' ' + n : '') + '" data-cam="' + ctcEsc(c.entity) + '">'
         + binnen + '<div class="stip" style="display:' + (n ? '' : 'none') + '"></div>'
-        + '<div class="dlabel">' + c.naam + '</div></div>';
+        + '<div class="dlabel">' + ctcEsc(c.naam) + '</div></div>';
     }).join('');
 
     this._laag.innerHTML = this._tabsHtml()
       + '<div class="detail"><div class="dkop">'
       + '<button class="terug"><ha-icon icon="mdi:chevron-left"></ha-icon><span>' + this._t('back') + '</span></button>'
-      + '<div class="dnaam">' + cam.naam + '</div>'
+      + '<div class="dnaam">' + ctcEsc(cam.naam) + '</div>'
       + '<div class="dnoot"><i></i><span class="noottekst">' + this._t('connecting') + '</span></div>'
       + '</div>'
       + '<div class="dlijf"><div class="speler"></div>'
@@ -1664,14 +1696,14 @@ class TouchCameraCard extends HTMLElement {
     this._stopClip();
 
     let onder = '';
-    if (c.mis) onder = '<div class="mis">' + c.mis + '</div>';
+    if (c.mis) onder = '<div class="mis">' + ctcEsc(c.mis) + '</div>';
     else if (!c.url) onder = '<div class="bezig">' + this._t('fetching') + '</div>';
 
     this._laag.innerHTML = this._tabsHtml()
       + '<div class="clipscherm">'
       + '<div class="ckop">'
       + '<button class="terug"><ha-icon icon="mdi:chevron-left"></ha-icon><span>' + this._t('back') + '</span></button>'
-      + '<div class="dnaam">' + c.titel + '</div></div>'
+      + '<div class="dnaam">' + ctcEsc(c.titel) + '</div></div>'
       + '<div class="cvak">' + onder + '</div></div>';
 
     this._knoopTabs();
@@ -1769,7 +1801,7 @@ window.customCards.push({
   description: 'Cameras with their own tabs, built for touch panels and Nest Hub cast dashboards: snapshots on the tiles, MJPEG in the large view, mp4 for notifications',
 });
 
-console.info('%c touch-camera-card %c 1.0.1 ', 'background:#4aa3ff;color:#fff', '');
+console.info('%c touch-camera-card %c 1.0.4 ', 'background:#4aa3ff;color:#fff', '');
 
 
 // ---------------------------------------------------------------------------
