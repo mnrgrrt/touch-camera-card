@@ -528,6 +528,7 @@ class TouchCameraCard extends HTMLElement {
       meldingen_aantal: 20,
       meldingen_per_camera: 8,
     }, config);
+    if (this._voorbeeld) this._cfg.stroom = false;
     this._tab = 0;
     this._gekozen = {};
     this._gebouwd = false;
@@ -535,6 +536,17 @@ class TouchCameraCard extends HTMLElement {
   }
 
   getCardSize() { return 12; }
+
+  // Home Assistant sets this on the element when the card is drawn in the card
+  // picker. A preview must not open an MJPEG stream: the picker can draw several
+  // cards at once and every stream holds a connection open. Snapshots show the
+  // same layout at a fraction of the cost, so the preview falls back to those.
+  set preview(aan) {
+    this._voorbeeld = !!aan;
+    if (this._voorbeeld && this._cfg) this._cfg.stroom = false;
+  }
+
+  get preview() { return !!this._voorbeeld; }
 
   static getConfigElement() {
     return document.createElement('touch-camera-card-editor');
@@ -1829,9 +1841,10 @@ window.customCards.push({
   type: 'touch-camera-card',
   name: 'Touch camera card',
   description: 'Cameras with their own tabs, built for touch panels and Nest Hub cast dashboards: snapshots on the tiles, MJPEG in the large view, mp4 for notifications',
+  preview: true,
 });
 
-console.info('%c touch-camera-card %c 1.0.4 ', 'background:#4aa3ff;color:#fff', '');
+console.info('%c touch-camera-card %c 1.0.5 ', 'background:#4aa3ff;color:#fff', '');
 
 
 // ---------------------------------------------------------------------------
@@ -2533,6 +2546,7 @@ window.customCards.push({
   type: 'touch-camera-tile',
   name: 'Touch camera tile',
   description: 'One camera as a single tile, with a snapshot timer and a watchdog instead of a stream that can stall unnoticed',
+  preview: true,
 });
 
 class TouchCameraTileEditor extends HTMLElement {
