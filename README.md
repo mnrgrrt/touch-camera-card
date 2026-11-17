@@ -1,6 +1,6 @@
 # Touch camera card
 
-![The card on a Nest Hub](images/camera-card-nesthub.png)
+<img src="images/camera-card-nesthub.png" alt="The card on a Nest Hub" width="560">
 
 A Lovelace card that puts your cameras behind its own tabs, built for touch panels and for Google Nest Hub cast dashboards at 1024×600.
 
@@ -26,6 +26,14 @@ It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-
 | --- | --- |
 | ![The weather tab](images/camera-card-weather-light.png) | ![The card editor](images/camera-card-settings-light.png) |
 
+### On a portrait screen or a phone
+
+| A tablet on the wall | A phone |
+| --- | --- |
+| <img src="images/camera-card-portrait.png" alt="The card on a portrait tablet" width="420"> | <img src="images/camera-card-phone.png" alt="The card on a phone" width="320"> |
+
+*On a screen that stands upright, and on a phone, the card puts everything under each other: the large camera on top, the small ones below it, and the notifications underneath. A phone gets one large camera and two small ones per row, and the page scrolls down through the whole notification list. A wider upright screen, such as a tablet, fits two large cameras side by side with four small ones per row below them. It does this by itself; see `layout` below.*
+
 ## What it does
 
 **Tabs of your own.** Group your cameras however you like — by house, by floor, by whatever. Each tab has one large image and a column or grid of small ones; tap a small one to open it large, or set the tab to swap instead, so the tapped tile takes the large spot and the page never changes.
@@ -39,6 +47,10 @@ It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-
 **Notifications beside the images.** Today's motion and person events per camera, with the thumbnail, and the clip plays on a screen of its own on top of the card.
 
 **Tiles that are not cameras.** A tile can hold any ordinary Lovelace card — a forecast, a sensor graph — or a live weather radar built from map tiles. The clock on a weather tile gives the time of the picture and how far that is from now — `10:05 · +30 min`, `09:20 · −15 min`, `tue 05:00 · +19 h` — so you can always tell a forecast from a look back.
+
+**Upright screens and phones too.** On a portrait screen or in a narrow space the card stacks instead of shrinking: large images on top, the small tiles below them, the notifications below those. A phone shows one large image and two small tiles per row, and the page scrolls instead of the card. A wider upright screen shows two large images side by side, with two small tiles under each. Other cameras marked `large` join the small tiles. Turn the screen and it switches back to columns. `layout` fixes one or the other.
+
+**In your language.** The card and its editor follow the language of Home Assistant. English and Dutch are included, and `language` lets you pick one yourself. Adding a language is one file; see [Translations](#translations).
 
 **A form for everything.** Tabs, cameras, settings: all of it from the dashboard editor, no YAML needed. The code editor keeps working and stays authoritative for keys the form does not know about.
 
@@ -97,6 +109,8 @@ That is enough. Everything below is optional.
 | `notification_width` | — | Width of a notification thumbnail in pixels. |
 | `clip_timeout` | `20` | Give up on a recording after this many seconds. |
 | `clip_loop` | `true` | Loop the recording. |
+| `layout` | `auto` | `auto` stacks everything under each other on a portrait screen and in a space narrower than 520 pixels, and uses columns otherwise. `columns` always uses columns, the way it looks on a Nest Hub. `stacked` always stacks. |
+| `language` | `auto` | The language of the card and of its editor. `auto` follows Home Assistant. Or set a language code, for example `en` or `nl`. |
 
 ### Tab
 
@@ -233,6 +247,14 @@ navigate: /lovelace/cameras
 
 `grayscale` is worth a word. The image sits there in grey and the colour returns the moment a person is seen. A still grey scene is easy to ignore, which is exactly what you want from a camera on a dashboard you look at all day, and colour coming back catches the eye harder than any border does.
 
+## Translations
+
+All the text of the card and its editor lives in [`translations/`](translations), one JSON file per language. English is the base: anything a language does not have yet is shown in English.
+
+To add a language, copy `translations/en.json` to a file named after the two-letter code, for example `de.json`, translate the values and leave the keys as they are. Set `languageName` to the name of the language in that language; that is what the editor shows in its list. Then open a pull request. You do not need to build anything: a GitHub Action puts the file into `touch-camera-card.js` once it is merged.
+
+The card picks the language Home Assistant is set to, or the one in `language`.
+
 ## Goes well with
 
 **[Touch music card](https://github.com/mnrgrrt/touch-music-card)** — Music Assistant behind one screen, for the same Nest Hub: speakers along the top, what is playing on the left, playlists, radio and search on the right, with an on-screen keyboard. Put both cards on their own view of one cast dashboard and give each a navigation button to the other; the music card has `links` for that.
@@ -245,7 +267,7 @@ I would really like to hear what you think of it. Are you using it, and on what?
 
 Be aware that I do not maintain it actively. I work on it now and then when I have time, so an answer or a fix can take a while. Pull requests are welcome and I will look at them, and you are free to fork it and make it your own without asking.
 
-It is one file with no build step — no npm, no bundler, no TypeScript. Open it in an editor and change what you want. That is deliberate.
+It is still plain JavaScript with no dependencies — no npm, no bundler, no TypeScript. The code lives in `src/touch-camera-card.js` and the texts in `translations/`. A small script, `build.mjs`, puts the two together into `touch-camera-card.js`, the file HACS installs; a GitHub Action runs it on every change, so you never have to. Run `node build.mjs` yourself if you want to try a change locally.
 
 ## How this was built
 

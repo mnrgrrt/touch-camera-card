@@ -1,3 +1,6 @@
+// GENERATED FILE - do not edit. Edit src/touch-camera-card.js and translations/*.json,
+// then run `node build.mjs` (a GitHub Action does this on every push to main).
+
 // touch-camera-card
 //
 // One Lovelace card with its own tabs for cameras, built for touch panels and
@@ -274,6 +277,48 @@ button { background:none; border:0; padding:0; font:inherit; color:inherit;
                 background:linear-gradient(to top,rgba(0,0,0,.65),transparent); }
 .mini.beweging { box-shadow:0 0 0 2px var(--waarschuw); }
 .mini.persoon  { box-shadow:0 0 0 2px var(--alarm); }
+
+/* Stacked: for a portrait screen or a phone. Here the width leads instead of the
+   height: the large image across the full width, the small tiles below it in as
+   many columns as fit, and the notifications underneath. Nothing gets zoomed out.
+   Without fill the card is as tall as its content; with fill it takes the screen
+   and the notifications get whatever height is left. */
+.laag.staand:not(.vul) { height:auto; }
+.laag.staand .tabs { overflow-x:auto; scrollbar-width:none; }
+.laag.staand .tabs::-webkit-scrollbar { display:none; }
+.laag.staand .blad { flex-direction:column; flex:0 0 auto; }
+.laag.staand.vul .blad { flex:1 1 auto; overflow-y:auto; scrollbar-width:none; }
+.laag.staand.vul .blad::-webkit-scrollbar { display:none; }
+.laag.staand .kolom { width:100%; height:auto; }
+.laag.staand .hoofd { display:grid; grid-template-columns:repeat(var(--sg,1),minmax(0,1fr)); }
+.laag.staand .hoofd .tegel { width:100%; height:auto; }
+.laag.staand .overig { display:grid; grid-template-columns:repeat(var(--sk,2),minmax(0,1fr));
+                       gap:var(--gat,8px); align-items:start; align-content:start; flex:0 0 auto; }
+.laag.staand .overig.raster { min-width:0; height:auto; grid-auto-rows:auto;
+                              grid-template-columns:repeat(var(--kk,2),minmax(0,1fr)); }
+.laag.staand .overig .tegel, .laag.staand .overig.raster .tegel { width:100%; height:auto;
+                              aspect-ratio:var(--vh,16/9); }
+.laag.staand .mkol { min-width:0; width:100%; flex:0 0 auto; height:340px; }
+.laag.staand.vul .mkol { flex:1 0 200px; height:auto; }
+.laag.staand .melding { grid-template-columns:min(var(--mb,200px),42%) minmax(0,1fr); }
+.laag.staand .dlijf { flex-direction:column; flex:0 0 auto; }
+.laag.staand.vul .dlijf { flex:1 1 auto; }
+.laag.staand .speler { width:100%; height:auto; flex:0 0 auto; }
+.laag.staand.vul .dlijf { overflow-y:auto; scrollbar-width:none; }
+.laag.staand .zijkolom { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+                         height:auto; width:auto; flex:0 0 auto; overflow:visible;
+                         padding:3px; margin:-3px; }
+.laag.staand .mini { width:100%; height:auto; }
+.laag.staand .clipscherm { position:relative; inset:auto; padding:0; background:none; }
+.laag.staand .cvak { margin-top:10px; }
+/* On a phone the page scrolls, not the card: the card is as tall as its content,
+   also with fill, and the notifications are one long list without arrows. */
+.laag.staand.smal { height:auto; }
+.laag.staand.smal .blad, .laag.staand.smal .dlijf { flex:0 0 auto; overflow:visible; }
+.laag.staand.smal .mkol { height:auto; flex:0 0 auto; }
+.laag.staand.smal .scrollbox { display:block; }
+.laag.staand.smal .mlijst { overflow:visible; }
+.laag.staand.smal .pijlen { display:none; }
 `;
 
 const SEC = 1000;
@@ -323,105 +368,206 @@ const SLEUTELS_TERUG = Object.keys(SLEUTELS).reduce((o, k) => {
   return o;
 }, {});
 
-/* The few words the card puts on screen itself. English is the fallback for every
-   language that is not Dutch, so a new translation is one more block below. */
-const TEKST = {
-  en: {
-    signal: 'no signal',
-    notifications: 'Notifications',
-    today: 'today',
-    nothing: 'Nothing yet today',
-    loading: 'loading',
-    offline: 'unreachable',
-    noimage: 'no image',
-    back: 'Back',
-    connecting: 'connecting…',
-    live: 'live',
-    snapshots: 'snapshots',
-    nosource: 'no source',
-    nostart: 'stream did not start',
-    stalled: 'stream stalled',
-    norecording: 'notification without a recording of its own',
-    nofetch: 'the recording could not be fetched',
-    fetching: 'fetching the recording…',
-    event: 'event',
-    person: 'person',
-    motion: 'motion',
-    nosignal: 'without signal',
-    notabs: 'No tabs yet. Add one to choose cameras.',
-    nocams: 'No cameras on this tab yet.',
-    nocam: 'no camera chosen yet',
-    radarsrc: 'radar: ',
-    now: 'now',
-    noplace: 'place not found',
-    hourshort: 'h',
-    tabs: 'Tabs',
-    tab: 'Tab',
-    general: 'General settings',
-    addtab: 'Tab',
-    deltab: 'Delete tab',
-    moveleft: 'Move left',
-    moveright: 'Move right',
-    camsontab: 'Cameras on this tab',
-    addcam: 'Add camera',
-    big: 'large',
-    moveup: 'Up',
-    movedown: 'Down',
-    delcam: 'Delete camera',
-    owncard: 'a card of your own',
-    late: (s) => 'the recording did not arrive within ' + s + ' seconds',
+/* Every word the card and its editor put on screen. They live in translations/,
+   one JSON file per language; build.mjs merges them in here, with English as the
+   fallback for anything a language does not have yet. Adding a language is adding
+   one file there, no code. */
+const TAAL = {
+  "en": {
+    "languageName": "English",
+    "card": {
+      "signal": "no signal",
+      "notifications": "Notifications",
+      "today": "today",
+      "nothing": "Nothing yet today",
+      "loading": "loading",
+      "offline": "unreachable",
+      "noimage": "no image",
+      "back": "Back",
+      "connecting": "connecting…",
+      "live": "live",
+      "snapshots": "snapshots",
+      "nosource": "no source",
+      "nostart": "stream did not start",
+      "stalled": "stream stalled",
+      "norecording": "notification without a recording of its own",
+      "nofetch": "the recording could not be fetched",
+      "fetching": "fetching the recording…",
+      "event": "event",
+      "person": "person",
+      "motion": "motion",
+      "nosignal": "without signal",
+      "notabs": "No tabs yet. Add one to choose cameras.",
+      "nocams": "No cameras on this tab yet.",
+      "nocam": "no camera chosen yet",
+      "radarsrc": "radar: ",
+      "now": "now",
+      "noplace": "place not found",
+      "hourshort": "h",
+      "tabs": "Tabs",
+      "tab": "Tab",
+      "general": "General settings",
+      "addtab": "Tab",
+      "deltab": "Delete tab",
+      "moveleft": "Move left",
+      "moveright": "Move right",
+      "camsontab": "Cameras on this tab",
+      "addcam": "Add camera",
+      "big": "large",
+      "moveup": "Up",
+      "movedown": "Down",
+      "delcam": "Delete camera",
+      "owncard": "a card of your own",
+      "late": "the recording did not arrive within {0} seconds"
+    },
+    "editor": {
+      "fill": "Decide the height itself (fills the screen)",
+      "height": "Fixed height",
+      "fill_margin": "Bottom margin when deciding itself",
+      "refresh": "Refresh every",
+      "stream": "Large view as a continuous stream",
+      "large_refresh": "Refresh large view every (after a fallback)",
+      "stalled_after": "Treat stream as stalled after",
+      "notifications": "Show notifications",
+      "notification_count": "Notifications in the list",
+      "notifications_per_camera": "Notifications per camera",
+      "notification_width": "Width of a notification image",
+      "clip_timeout": "Give up on the recording after",
+      "clip_loop": "Loop the recording",
+      "name": "Name",
+      "icon": "Icon",
+      "entity": "Camera",
+      "swap": "Swap instead of opening large",
+      "grid": "Small tiles in a grid (number of columns)",
+      "large": "Show large",
+      "motion": "Motion sensor",
+      "person": "Person sensor",
+      "crop": "Crop image to 16:9",
+      "ratio": "Custom aspect ratio (e.g. 550/512)",
+      "grayscale": "Grey until a person is seen",
+      "radius": "Corner rounding",
+      "ring": "Thickness of the alert ring",
+      "navigate": "A tap goes to (dashboard path)",
+      "layout": "Layout",
+      "layoutAuto": "Automatic (stacked on a portrait or narrow screen)",
+      "layoutColumns": "Columns side by side",
+      "layoutStacked": "Stacked (portrait screens and phones)",
+      "language": "Language",
+      "followHa": "Follow Home Assistant"
+    },
+    "sections": {
+      "size": "Size",
+      "image": "Image",
+      "notifications": "Notifications",
+      "more": "More settings",
+      "display": "Display"
+    }
   },
-  nl: {
-    signal: 'geen signaal',
-    notifications: 'Meldingen',
-    today: 'vandaag',
-    nothing: 'Nog niets vandaag',
-    loading: 'laden',
-    offline: 'niet bereikbaar',
-    noimage: 'geen beeld',
-    back: 'Terug',
-    connecting: 'verbinden…',
-    live: 'live',
-    snapshots: 'momentopnames',
-    nosource: 'geen bron',
-    nostart: 'stroom kwam niet op gang',
-    stalled: 'stroom viel stil',
-    norecording: 'melding zonder herkenbare opname',
-    nofetch: 'opname niet op te halen',
-    fetching: 'opname ophalen…',
-    event: 'gebeurtenis',
-    person: 'persoon',
-    motion: 'beweging',
-    nosignal: 'zonder signaal',
-    notabs: 'Nog geen tabbladen. Voeg er een toe om camera’s te kiezen.',
-    nocams: 'Nog geen camera’s op dit tabblad.',
-    nocam: 'nog geen camera gekozen',
-    radarsrc: 'weerbeeld: ',
-    now: 'nu',
-    noplace: 'plaats niet gevonden',
-    hourshort: 'u',
-    tabs: 'Tabbladen',
-    tab: 'Tabblad',
-    general: 'Algemene instellingen',
-    addtab: 'Tabblad',
-    deltab: 'Tabblad verwijderen',
-    moveleft: 'Naar links',
-    moveright: 'Naar rechts',
-    camsontab: 'Camera’s op dit tabblad',
-    addcam: 'Camera toevoegen',
-    big: 'groot',
-    moveup: 'Omhoog',
-    movedown: 'Omlaag',
-    delcam: 'Camera verwijderen',
-    owncard: 'eigen kaart',
-    late: (s) => 'opname kwam niet binnen ' + s + ' seconden',
-  },
+  "nl": {
+    "languageName": "Nederlands",
+    "card": {
+      "signal": "geen signaal",
+      "notifications": "Meldingen",
+      "today": "vandaag",
+      "nothing": "Nog niets vandaag",
+      "loading": "laden",
+      "offline": "niet bereikbaar",
+      "noimage": "geen beeld",
+      "back": "Terug",
+      "connecting": "verbinden…",
+      "live": "live",
+      "snapshots": "momentopnames",
+      "nosource": "geen bron",
+      "nostart": "stroom kwam niet op gang",
+      "stalled": "stroom viel stil",
+      "norecording": "melding zonder herkenbare opname",
+      "nofetch": "opname niet op te halen",
+      "fetching": "opname ophalen…",
+      "event": "gebeurtenis",
+      "person": "persoon",
+      "motion": "beweging",
+      "nosignal": "zonder signaal",
+      "notabs": "Nog geen tabbladen. Voeg er een toe om camera’s te kiezen.",
+      "nocams": "Nog geen camera’s op dit tabblad.",
+      "nocam": "nog geen camera gekozen",
+      "radarsrc": "weerbeeld: ",
+      "now": "nu",
+      "noplace": "plaats niet gevonden",
+      "hourshort": "u",
+      "tabs": "Tabbladen",
+      "tab": "Tabblad",
+      "general": "Algemene instellingen",
+      "addtab": "Tabblad",
+      "deltab": "Tabblad verwijderen",
+      "moveleft": "Naar links",
+      "moveright": "Naar rechts",
+      "camsontab": "Camera’s op dit tabblad",
+      "addcam": "Camera toevoegen",
+      "big": "groot",
+      "moveup": "Omhoog",
+      "movedown": "Omlaag",
+      "delcam": "Camera verwijderen",
+      "owncard": "eigen kaart",
+      "late": "opname kwam niet binnen {0} seconden"
+    },
+    "editor": {
+      "fill": "Hoogte zelf bepalen (vult het scherm)",
+      "height": "Vaste hoogte",
+      "fill_margin": "Marge onderaan bij zelf bepalen",
+      "refresh": "Verversen om de",
+      "stream": "Groot beeld als doorlopende stroom",
+      "large_refresh": "Groot beeld verversen om de (bij terugval)",
+      "stalled_after": "Stroom als vastgelopen beschouwen na",
+      "notifications": "Meldingen tonen",
+      "notification_count": "Meldingen in de lijst",
+      "notifications_per_camera": "Meldingen per camera",
+      "notification_width": "Breedte van een meldingsplaatje",
+      "clip_timeout": "Opname opgeven na",
+      "clip_loop": "Opname herhalen",
+      "name": "Naam",
+      "icon": "Pictogram",
+      "entity": "Camera",
+      "swap": "Wisselen in plaats van groot openen",
+      "grid": "Kleine tegels in een raster (aantal kolommen)",
+      "large": "Groot tonen",
+      "motion": "Sensor beweging",
+      "person": "Sensor persoon",
+      "crop": "Beeld bijsnijden tot 16:9",
+      "ratio": "Eigen beeldverhouding (bv. 550/512)",
+      "grayscale": "Grijs tot er iemand staat",
+      "radius": "Ronding van de hoeken",
+      "ring": "Dikte van de meldingsrand",
+      "navigate": "Aantikken gaat naar (pad)",
+      "layout": "Indeling",
+      "layoutAuto": "Automatisch (onder elkaar op een staand of smal scherm)",
+      "layoutColumns": "Kolommen naast elkaar",
+      "layoutStacked": "Onder elkaar (staande schermen en telefoons)",
+      "language": "Taal",
+      "followHa": "Taal van Home Assistant volgen"
+    },
+    "sections": {
+      "size": "Formaat",
+      "image": "Beeld",
+      "notifications": "Meldingen",
+      "more": "Meer instellingen",
+      "display": "Weergave"
+    }
+  }
 };
 
 function ctcT(taal, sleutel, arg) {
-  const T = TEKST[taal] || TEKST.en;
-  const v = (T[sleutel] !== undefined ? T[sleutel] : TEKST.en[sleutel]);
-  return typeof v === 'function' ? v(arg) : (v === undefined ? sleutel : v);
+  const T = (TAAL[taal] || TAAL.en).card || {};
+  let v = T[sleutel] != null ? T[sleutel] : TAAL.en.card[sleutel];
+  if (v == null) return sleutel;
+  if (arg != null) v = String(v).replace('{0}', arg);
+  return v;
+}
+
+// The language to draw in: the one the configuration asks for, if there is a
+// translation for it, otherwise the one Home Assistant is set to.
+function ctcTaalVan(cfg, h) {
+  const l = cfg && cfg.language;
+  return l && l !== 'auto' && TAAL[l] ? l : ctcTaal(h);
 }
 
 // Everything below that builds HTML as a string puts configuration values and
@@ -573,6 +719,7 @@ class TouchCameraCard extends HTMLElement {
         const b = Math.round(this.clientWidth);
         if (b === this._breedte) return;
         this._breedte = b;
+        this._wisselIndeling();
         this._kap = 0;
         this._kapRonde = 0;
         this._vulHoogte();
@@ -664,8 +811,19 @@ class TouchCameraCard extends HTMLElement {
     this._gebouwd = true;
     const c = this._cfg;
     this.shadowRoot.innerHTML = '<style>' + CSS + '</style><div class="laag'
-      + (c.kaal ? ' kaal' : '') + (c.grijs ? ' grijs' : '') + '"></div>';
+      + (c.kaal ? ' kaal' : '') + (c.grijs ? ' grijs' : '') + (c.vullen ? ' vul' : '') + '"></div>';
     this._laag = this.shadowRoot.querySelector('.laag');
+    this._isStaand = this._staand();
+    this._wasBreed = this._isStaand && this._staandBreed();
+    this._laag.classList.toggle('staand', this._isStaand);
+    this._laag.classList.toggle('smal', this._isStaand && !this._wasBreed);
+    // Turning a tablet or phone round can switch between the two layouts.
+    if (!this._draai && window.matchMedia) {
+      this._draai = window.matchMedia('(orientation: portrait)');
+      const z = () => this._wisselIndeling();
+      if (this._draai.addEventListener) this._draai.addEventListener('change', z);
+      else if (this._draai.addListener) this._draai.addListener(z);
+    }
     // Only set what passes inspection; a rejected value leaves the property alone.
     const zet = (naam, waarde) => { if (waarde != null) this.style.setProperty(naam, waarde); };
     const px = (v, min, max) => { const n = ctcGetal(v, min, max); return n == null ? null : n + 'px'; };
@@ -681,6 +839,38 @@ class TouchCameraCard extends HTMLElement {
     this._teken();
     this._haalMeldingen();
     this._hervat();
+  }
+
+  // Stacked or side by side. layout: stacked or columns fixes it; auto (the
+  // default) stacks on a portrait screen and in a box too narrow for columns, such
+  // as a phone or the preview in the card editor. A bare tile never stacks.
+  _staand() {
+    const c = this._cfg;
+    if (c.kaal) return false;
+    if (c.layout === 'stacked') return true;
+    if (c.layout === 'columns') return false;
+    const b = this.clientWidth || 0;
+    const staand = !!(this._draai && this._draai.matches) || !!(window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
+    return staand || (b > 0 && b < 520);
+  }
+
+  // Wide enough, stacked, for two large images side by side.
+  _staandBreed() {
+    const b = (this._laag && this._laag.clientWidth) || this.clientWidth || 0;
+    return b >= 600;
+  }
+
+  _wisselIndeling() {
+    if (!this._laag) return;
+    const nu = this._staand();
+    const breed = nu && this._staandBreed();
+    if (nu === this._isStaand && breed === this._wasBreed) return;
+    this._wasBreed = breed;
+    this._isStaand = nu;
+    this._laag.classList.toggle('smal', nu && !breed);
+    this._laag.classList.toggle('staand', nu);
+    this._sleutel = '';
+    this._teken();
   }
 
   // One clock for everything: refreshing snapshots, updating status colours and
@@ -722,6 +912,8 @@ class TouchCameraCard extends HTMLElement {
     const l = this._laag;
     if (!l) return;
     l.style.zoom = '';
+    // Stacked, the width leads and the CSS does the sizes. Nothing to scale.
+    if (this._isStaand) { this._alleWeerPassend(); return; }
     this._zetBreedtes();
     const heb = l.clientWidth;
     const nodig = l.scrollWidth;
@@ -1011,9 +1203,24 @@ class TouchCameraCard extends HTMLElement {
       groot = cams.filter(c => c.groot);
       rest = cams.filter(c => !c.groot);
     }
+    // Stacked, the width decides how many large images fit side by side: one on a
+    // phone, two on a wider upright screen. Any other camera marked large joins the
+    // small tiles, at the front. The small tiles go two to a row on a phone and
+    // four on the wider screen: two under each large image.
+    let nGroot = 0;
+    let nKlein = 0;
+    if (this._isStaand) {
+      nGroot = this._staandBreed() ? 2 : 1;
+      nKlein = 2 * nGroot;
+      if (groot.length > nGroot) {
+        rest = groot.slice(nGroot).concat(rest);
+        groot = groot.slice(0, nGroot);
+      }
+      nGroot = Math.max(1, groot.length);
+    }
 
     const hoofd = groot.length
-      ? '<div class="kolom hoofd" style="--ng:' + groot.length + '">'
+      ? '<div class="kolom hoofd" style="--ng:' + groot.length + (nGroot ? ';--sg:' + nGroot : '') + '">'
         + groot.map(c => this._tegelHtml(c, true)).join('') + '</div>' : '';
     // Small tiles sit in a single column next to the large image by default. With
     // grid: <number of columns> they are spread over the whole space beside it.
@@ -1022,7 +1229,7 @@ class TouchCameraCard extends HTMLElement {
       : rst
         ? '<div class="kolom overig raster" style="--kk:' + ctcGeheel(rst, '2', 8) + '">'
           + rest.map(c => this._tegelHtml(c)).join('') + '</div>'
-        : '<div class="kolom overig" style="--no:' + rest.length + '">'
+        : '<div class="kolom overig" style="--no:' + rest.length + (nKlein ? ';--sk:' + nKlein : '') + '">'
           + rest.map(c => this._tegelHtml(c)).join('') + '</div>';
 
     const toonM = !this._cfg.kaal && tabblad.meldingen !== false
@@ -1278,7 +1485,7 @@ class TouchCameraCard extends HTMLElement {
       if (b) return b;
     } catch (e) { /* no storage: just look it up */ }
     const m = p.match(/^(.*?),\s*([A-Za-z]{2})$/);
-    const u = 'https://geocoding-api.open-meteo.com/v1/search?count=1&language=' + ctcTaal(this._hass)
+    const u = 'https://geocoding-api.open-meteo.com/v1/search?count=1&language=' + ctcTaalVan(this._cfg, this._hass)
       + '&name=' + encodeURIComponent(m ? m[1] : p) + (m ? '&countryCode=' + m[2].toUpperCase() : '');
     try {
       const j = await (await fetch(u)).json();
@@ -1355,7 +1562,7 @@ class TouchCameraCard extends HTMLElement {
     else if (Math.abs(min) < 120) rel = (min > 0 ? '+' : '\u2212') + Math.abs(min) + ' min';
     else rel = (min > 0 ? '+' : '\u2212') + Math.round(Math.abs(min) / 60) + ' ' + this._t('hourshort');
     const vandaag = new Date().toDateString() === d.toDateString();
-    const dag = vandaag ? '' : d.toLocaleDateString(ctcTaal(this._hass), { weekday: 'short' }).replace('.', '') + ' ';
+    const dag = vandaag ? '' : d.toLocaleDateString(ctcTaalVan(this._cfg, this._hass), { weekday: 'short' }).replace('.', '') + ' ';
     return dag + this._weerTijd(iso) + ' \u00b7 ' + rel;
   }
 
@@ -1579,7 +1786,7 @@ class TouchCameraCard extends HTMLElement {
 
   // One word of the interface, in the language Home Assistant is set to.
   _t(sleutel, arg) {
-    return ctcT(this._taalKnop || ctcTaal(this._hass), sleutel, arg);
+    return ctcT(ctcTaalVan(this._cfg, this._hass), sleutel, arg);
   }
 
   _noot(tekst, terugval) {
@@ -1754,7 +1961,8 @@ class TouchCameraCard extends HTMLElement {
     // Measure the box in pixels instead of leaving it to the layout.
     const vak = this._laag.querySelector('.cvak');
     const hoog = Math.max(160, this._laag.clientHeight - 34 - 34 - 24);
-    const breed = Math.min(this._laag.clientWidth - 36, Math.round(hoog * 16 / 9));
+    const breed = this._isStaand ? this._laag.clientWidth - 36
+      : Math.min(this._laag.clientWidth - 36, Math.round(hoog * 16 / 9));
     vak.style.width = breed + 'px';
     vak.style.height = Math.round(breed * 9 / 16) + 'px';
 
@@ -1868,9 +2076,18 @@ const STANDAARD = {
   meldingen_aantal: 20,
   meldingen_per_camera: 8,
   vullen: false,
+  layout: 'auto',
+  language: 'auto',
 };
 
 const SCHEMA = [
+  {
+    name: '', type: 'expandable', title: 'Weergave', icon: 'mdi:monitor',
+    schema: [
+      { name: 'layout', selector: { select: { options: [] } } },
+      { name: 'language', selector: { select: { options: [] } } },
+    ],
+  },
   {
     name: '', type: 'expandable', title: 'Formaat', icon: 'mdi:resize',
     schema: [
@@ -1933,81 +2150,42 @@ const CAM_SCHEMA = [
   },
 ];
 
-// The editor labels in two languages. Which one is shown follows the language the
-// user has set in Home Assistant, so a Dutch household keeps its Dutch form and
-// everyone else gets English. An unknown language falls back to English.
-const LABELS_EN = {
-  // general
-  vullen: 'Decide the height itself (fills the screen)',
-  hoogte: 'Fixed height',
-  vul_marge: 'Bottom margin when deciding itself',
-  ververs: 'Refresh every',
-  stroom: 'Large view as a continuous stream',
-  groot_ververs: 'Refresh large view every (after a fallback)',
-  stil_na: 'Treat stream as stalled after',
-  meldingen: 'Show notifications',
-  meldingen_aantal: 'Notifications in the list',
-  meldingen_per_camera: 'Notifications per camera',
-  melding_breedte: 'Width of a notification image',
-  clip_wacht: 'Give up on the recording after',
-  clip_herhalen: 'Loop the recording',
-  // tab and camera
-  naam: 'Name',
-  icon: 'Icon',
-  entity: 'Camera',
-  wisselen: 'Swap instead of opening large',
-  raster: 'Small tiles in a grid (number of columns)',
-  groot: 'Show large',
-  beweging: 'Motion sensor',
-  persoon: 'Person sensor',
-  bijsnijden: 'Crop image to 16:9',
-  verhouding: 'Custom aspect ratio (e.g. 550/512)',
-  // tile
-  grijs: 'Grey until a person is seen',
-  rondte: 'Corner rounding',
-  rand: 'Thickness of the alert ring',
-  navigeren: 'A tap goes to (dashboard path)',
-};
+// The editor labels come from the translation files, keyed by the English name of
+// the option. The schemas below use the internal names; SLEUTELS_TERUG maps them.
+// The folded-out sections are found by their (internal, Dutch) title.
+const SECTIES = { Formaat: 'size', Beeld: 'image', Meldingen: 'notifications', 'Meer instellingen': 'more', Weergave: 'display' };
 
-const KOPPEN_EN = {
-  Formaat: 'Size',
-  Beeld: 'Image',
-  Meldingen: 'Notifications',
-  'Meer instellingen': 'More settings',
-};
+function ctcLabel(taal, naam) {
+  const k = SLEUTELS_TERUG[naam] || naam;
+  const E = (TAAL[taal] || TAAL.en).editor || {};
+  return E[k] != null ? E[k] : TAAL.en.editor[k];
+}
 
-const LABELS_NL = {
-  // general
-  vullen: 'Hoogte zelf bepalen (vult het scherm)',
-  hoogte: 'Vaste hoogte',
-  vul_marge: 'Marge onderaan bij zelf bepalen',
-  ververs: 'Verversen om de',
-  stroom: 'Groot beeld als doorlopende stroom',
-  groot_ververs: 'Groot beeld verversen om de (bij terugval)',
-  stil_na: 'Stroom als vastgelopen beschouwen na',
-  meldingen: 'Meldingen tonen',
-  meldingen_aantal: 'Meldingen in de lijst',
-  meldingen_per_camera: 'Meldingen per camera',
-  melding_breedte: 'Breedte van een meldingsplaatje',
-  clip_wacht: 'Opname opgeven na',
-  clip_herhalen: 'Opname herhalen',
-  // tab and camera
-  naam: 'Naam',
-  icon: 'Pictogram',
-  entity: 'Camera',
-  wisselen: 'Wisselen in plaats van groot openen',
-  raster: 'Kleine tegels in een raster (aantal kolommen)',
-  groot: 'Groot tonen',
-  beweging: 'Sensor beweging',
-  persoon: 'Sensor persoon',
-  bijsnijden: 'Beeld bijsnijden tot 16:9',
-  verhouding: 'Eigen beeldverhouding (bv. 550/512)',
-  // tegel
-  grijs: 'Grijs tot er iemand staat',
-  rondte: 'Ronding van de hoeken',
-  rand: 'Dikte van de meldingsrand',
-  navigeren: 'Aantikken gaat naar (pad)',
-};
+// Translate the section headings and fill in the choices that depend on the
+// language: the layout options and the list of languages there are files for.
+function ctcSchema(taal, schema) {
+  const L = TAAL[taal] || TAAL.en;
+  const S = Object.assign({}, TAAL.en.sections, L.sections || {});
+  const E = (k) => ctcLabel(taal, k);
+  return schema.map((s) => {
+    if (!s) return s;
+    let n = s;
+    if (s.title && SECTIES[s.title]) n = Object.assign({}, n, { title: S[SECTIES[s.title]] || s.title });
+    if (s.name === 'layout') {
+      n = Object.assign({}, n, { selector: { select: { mode: 'dropdown', options: [
+        { value: 'auto', label: E('layoutAuto') },
+        { value: 'columns', label: E('layoutColumns') },
+        { value: 'stacked', label: E('layoutStacked') },
+      ] } } });
+    }
+    if (s.name === 'language') {
+      n = Object.assign({}, n, { selector: { select: { mode: 'dropdown', options:
+        [{ value: 'auto', label: E('followHa') }].concat(Object.keys(TAAL).map((c) => ({ value: c, label: TAAL[c].languageName || c }))) } } });
+    }
+    if (Array.isArray(s.schema)) n = Object.assign({}, n, { schema: ctcSchema(taal, s.schema) });
+    return n;
+  });
+}
 
 const STIJL = `
 .ctc-ed { --ctc-rand: var(--divider-color, rgba(127,127,127,.35)); }
@@ -2074,7 +2252,7 @@ class TouchCameraCardEditor extends HTMLElement {
     const eerste = !this._hass;
     this._hass = h;
     (this._formulieren || []).forEach((f) => { f.hass = h; });
-    if (eerste && this._taal && this._taal !== ctcTaal(h)) this._bouw();
+    if (eerste && this._taal && this._taal !== ctcTaalVan(this._config, h)) this._bouw();
   }
 
   // ---------- building up ----------
@@ -2082,6 +2260,7 @@ class TouchCameraCardEditor extends HTMLElement {
   _bouw() {
     this._formulieren = [];
     this.innerHTML = '';
+    this._taal = ctcTaalVan(this._config, this._hass);
 
     const stijl = document.createElement('style');
     stijl.textContent = STIJL;
@@ -2134,15 +2313,13 @@ class TouchCameraCardEditor extends HTMLElement {
   _form(schema, data, aan) {
     const f = document.createElement('ha-form');
     if (this._hass) f.hass = this._hass;
-    const taal = ctcTaal(this._hass);
+    const taal = ctcTaalVan(this._config, this._hass);
     this._taal = taal;
-    const L = taal === 'nl' ? LABELS_NL : LABELS_EN;
     // The headings of the folded-out sections are their own field: ha-form asks for
     // them through the title, not through a name, so they are translated here.
-    f.schema = taal === 'nl' ? schema : schema.map((s) => (s && s.title && KOPPEN_EN[s.title]
-      ? Object.assign({}, s, { title: KOPPEN_EN[s.title] }) : s));
+    f.schema = ctcSchema(taal, schema);
     f.data = data;
-    f.computeLabel = (s) => L[s.name] || LABELS_EN[s.name] || s.title || s.name;
+    f.computeLabel = (s) => ctcLabel(taal, s.name) || s.title || s.name;
     f.addEventListener('value-changed', aan);
     this._formulieren.push(f);
     return f;
@@ -2433,6 +2610,8 @@ class TouchCameraCardEditor extends HTMLElement {
       else this._config[k] = w;
     });
     this._stuur();
+    // A different language redraws the whole form in that language.
+    if (ctcTaalVan(this._config, this._hass) !== this._taal) this._bouw();
   }
 
   // ---------- passing on ----------
@@ -2562,7 +2741,7 @@ class TouchCameraTileEditor extends HTMLElement {
     const eerste = !this._hass;
     this._hass = h;
     if (this._f) this._f.hass = h;
-    if (eerste && this._taal && this._taal !== ctcTaal(h)) this._bouw();
+    if (eerste && this._taal && this._taal !== ctcTaalVan(this._config, h)) this._bouw();
   }
 
   _bouw() {
@@ -2570,13 +2749,11 @@ class TouchCameraTileEditor extends HTMLElement {
     this.shadowRoot.innerHTML = '';
     const f = document.createElement('ha-form');
     if (this._hass) f.hass = this._hass;
-    const taal = ctcTaal(this._hass);
+    const taal = ctcTaalVan(this._config, this._hass);
     this._taal = taal;
-    const L = taal === 'nl' ? LABELS_NL : LABELS_EN;
-    f.schema = taal === 'nl' ? TEGEL_SCHEMA : TEGEL_SCHEMA.map((s) => (s && s.title && KOPPEN_EN[s.title]
-      ? Object.assign({}, s, { title: KOPPEN_EN[s.title] }) : s));
+    f.schema = ctcSchema(taal, TEGEL_SCHEMA);
     f.data = this._config;
-    f.computeLabel = (s) => L[s.name] || LABELS_EN[s.name] || s.title || s.name;
+    f.computeLabel = (s) => ctcLabel(taal, s.name) || s.title || s.name;
     f.addEventListener('value-changed', (e) => {
       this._config = Object.assign({}, this._config, e.detail.value);
       this._stuur();
