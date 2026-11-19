@@ -1,22 +1,30 @@
 # Touch camera card
 
-<img src="images/camera-card-nesthub.png" alt="The card on a Nest Hub" width="560">
+**Your cameras on every touch screen in the house.** A Nest Hub on the desk, a tablet on the wall, the phone in your pocket. Live images, today's Frigate notifications with their clips, and nothing that stutters.
 
-A Lovelace card that puts your cameras behind its own tabs, built for touch panels and for Google Nest Hub cast dashboards at 1024×600.
+![The card on a Nest Hub, a wall tablet and a phone](images/camera-card-screens.png)
 
-It was written for a second-hand Nest Hub on a desk. Those devices are cheap now and they are poor at playing H.264, which is why most camera cards either stutter on them or show nothing at all. This card does not try to fix that. It avoids it.
+It started on a second-hand Nest Hub, and that is still where it stands out. A Nest Hub is poor at playing H.264, so most camera cards stutter on it or show nothing at all. This card does not try to fix that. It avoids it: snapshots for the small tiles, an MJPEG stream for the large view, and Frigate's own mp4 for a clip. That works on a Nest Hub, and on everything else too.
 
-One file, two cards: **Touch camera card** for a wall of cameras with tabs, and **Touch camera tile** for a single camera between your other cards. They share the same engine.
+## Highlights
 
-It is made to work hand in hand with **[Frigate](https://frigate.video/)**. Any camera entity will show up, but with the Frigate integration the card also lists today's motion and person events beside the images, with a thumbnail for each, and plays the clip Frigate recorded when you tap one. Frigate's occupancy sensors can colour a tile the moment something moves. It is still useful without Frigate; you just get the images without the notifications.
+- **Works on a Nest Hub.** No H.264 decoding, no WebRTC. The large view shows its first frame in about 22 ms.
+- **Notices when the image freezes.** A stalled stream looks just like a quiet scene. The card checks the image every two seconds and falls back to fast snapshots when nothing comes in, and it says so on screen.
+- **Frigate notifications beside the images.** Today's motion and person events per camera, with a thumbnail. Tap one and the clip plays. A tile lights up the moment Frigate sees something.
+- **Fits any screen.** Columns on a landscape screen. Everything under each other on an upright tablet or a phone. On a large wall tablet the text and notifications grow along with the images.
+- **Tabs of your own.** Group cameras by house, floor or whatever you like. A tab can also hold a weather radar or any ordinary Lovelace card.
+- **A single camera as a tile.** The second card in the same file shows one camera between your other cards, with the same watchdog.
+- **No YAML needed.** Everything is in the card editor, in English or Dutch.
 
-It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-music-card) — same screen size, same thumb-first idea, and the two sit side by side as views on one dashboard.
+It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-music-card). Same idea, same screens, and the two sit side by side as views on one dashboard.
+
+*A note on the pictures: the Nest Hub is my own, and the screenshots show the real card, but with stock photos from [Unsplash](https://unsplash.com/) in place of the camera images. I would rather not put my own house and garden on the internet. On your screen the tiles show your own cameras, of course.*
+
+## On a Nest Hub
 
 ![The Home tab](images/camera-card-home-light.png)
 
-*The Home tab at the 1024×600 of a Nest Hub — one large view, a column of small ones, and today's notifications beside them. Colours come from the Home Assistant theme, so it follows a dark theme just as well.*
-
-*A note on the pictures: the Nest Hub at the top is my own, and the screenshots show the real card, but with stock photos from [Unsplash](https://unsplash.com/) in place of the camera images — I would rather not put my own house and garden on the internet. On your panel the tiles show your own cameras, of course.*
+*The Home tab at the 1024×600 of a Nest Hub: one large view, a column of small ones, and today's notifications beside them. Colours come from the Home Assistant theme, so it follows a dark theme just as well.*
 
 ![A camera opened large](images/camera-card-large-light.png)
 
@@ -26,13 +34,17 @@ It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-
 | --- | --- |
 | ![The weather tab](images/camera-card-weather-light.png) | ![The card editor](images/camera-card-settings-light.png) |
 
-### On a portrait screen or a phone
+## On a wall tablet or a phone
+
+When the screen stands upright, the card puts everything under each other: the large camera on top, the small ones below it, the notifications underneath. It does this by itself; see `layout` below.
+
+- **Wall tablet.** Two large cameras side by side, with the small ones below in rows of three or four, whichever fills the width best. The notifications go in two columns. On a large tablet the labels, the notification thumbnails and their text grow along with the images, up to 1.6 times the normal size from a card width of 1280 pixels.
+- **Phone.** One large camera, with the small ones below in rows of two or three. The page scrolls down through the whole notification list.
+- Turn the screen and it switches back to columns.
 
 | A tablet on the wall | A phone |
 | --- | --- |
 | <img src="images/camera-card-portrait.png" alt="The card on a portrait tablet" width="420"> | <img src="images/camera-card-phone.png" alt="The card on a phone" width="320"> |
-
-*On a screen that stands upright, and on a phone, the card puts everything under each other: the large camera on top, the small ones below it, and the notifications underneath. A phone gets one large camera and two small ones per row, and the page scrolls down through the whole notification list. A wider upright screen, such as a tablet, fits two large cameras side by side with four small ones per row below them. It does this by itself; see `layout` below.*
 
 ## What it does
 
@@ -48,7 +60,7 @@ It has a sibling for music: [Touch music card](https://github.com/mnrgrrt/touch-
 
 **Tiles that are not cameras.** A tile can hold any ordinary Lovelace card — a forecast, a sensor graph — or a live weather radar built from map tiles. The clock on a weather tile gives the time of the picture and how far that is from now — `10:05 · +30 min`, `09:20 · −15 min`, `tue 05:00 · +19 h` — so you can always tell a forecast from a look back.
 
-**Upright screens and phones too.** On a portrait screen or in a narrow space the card stacks instead of shrinking: large images on top, the small tiles below them, the notifications below those. A phone shows one large image and two small tiles per row, and the page scrolls instead of the card. A wider upright screen shows two large images side by side, with two small tiles under each. Other cameras marked `large` join the small tiles. Turn the screen and it switches back to columns. `layout` fixes one or the other.
+**Upright screens and phones too.** On a portrait screen or in a narrow space the card stacks instead of shrinking: large images on top, the small tiles below them, the notifications below those. A phone shows one large image with the small tiles below in rows of two or three, and the page scrolls instead of the card. A wider upright screen shows two large images side by side, with the small tiles in rows of three or four and the notifications in two columns. Other cameras marked `large` join the small tiles. On a large wall tablet the text and the notifications grow along. Turn the screen and it switches back to columns. `layout` fixes one or the other.
 
 **In your language.** The card and its editor follow the language of Home Assistant. English and Dutch are included, and `language` lets you pick one yourself. Adding a language is one file; see [Translations](#translations).
 
