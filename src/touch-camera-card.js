@@ -25,7 +25,7 @@
 // navigation in light mode.
 
 const CSS = `
-:host { display:block; }
+:host { display:block; container-type:inline-size; }
 * { box-sizing:border-box; }
 button { background:none; border:0; padding:0; font:inherit; color:inherit;
          cursor:pointer; -webkit-tap-highlight-color:transparent; text-align:left; }
@@ -316,9 +316,58 @@ button { background:none; border:0; padding:0; font:inherit; color:inherit;
 .laag.staand.smal .scrollbox { display:block; }
 .laag.staand.smal .mlijst { overflow:visible; }
 .laag.staand.smal .pijlen { display:none; }
+/* Stacked and wider than a phone: the scroll arrows beside the notifications are a
+   bit narrower below 800 pixels, and stay as they are from there on. */
+.laag.staand .scrollbox { grid-template-columns:minmax(0,1fr) clamp(28px, 4.25cqw, 34px); }
+.laag.staand .pijlen button { flex-basis:clamp(36px, 5.5cqw, 44px); }
+.laag.staand .pijlen ha-icon { --mdc-icon-size:clamp(18px, 2.75cqw, 22px); }
+/* Stacked and wider than a phone: the notifications go side by side in as many
+   columns as fit, instead of one long column with empty space on the right. */
+.laag.staand:not(.smal) .mlijst { display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(340px, 42cqw, 540px),1fr));
+                                  align-content:start; gap:7px 12px; }
+/* A large upright screen, such as a wall tablet: the images already fill the width,
+   now the text, the notification thumbnails and the buttons grow along with them.
+   At 800 pixels everything is exactly as above; at 1280 and wider it is 1.6 times
+   that. The tabs and the scroll bar keep their size. */
+@container (min-width: 800px) {
+  .laag.staand .label { font-size:clamp(12px, 1.5cqw, 19.2px); padding:clamp(16px, 2cqw, 25.6px) clamp(10px, 1.25cqw, 16px) clamp(7px, .875cqw, 11.2px); }
+  .laag.staand .overig .label { font-size:clamp(11px, 1.375cqw, 17.6px); padding:clamp(12px, 1.5cqw, 19.2px) clamp(8px, 1cqw, 12.8px) clamp(5px, .625cqw, 8px); }
+  .laag.staand .stip { top:clamp(8px, 1cqw, 12.8px); right:clamp(8px, 1cqw, 12.8px); width:clamp(9px, 1.125cqw, 14.4px);
+                       height:clamp(9px, 1.125cqw, 14.4px); min-width:0; max-width:none; max-height:none; }
+  .laag.staand .mkol { height:clamp(340px, 42.5cqw, 544px); }
+  .laag.staand .mkop b { font-size:clamp(12.5px, 1.5625cqw, 20px); }
+  .laag.staand .mkop span { font-size:clamp(11px, 1.375cqw, 17.6px); }
+  .laag.staand .melding { grid-template-columns:min(max(var(--mb,200px), clamp(200px, 25cqw, 320px)),42%) minmax(0,1fr);
+                          gap:clamp(11px, 1.375cqw, 17.6px); }
+  .laag.staand .mtxt .b1 { font-size:clamp(13px, 1.625cqw, 20.8px); }
+  .laag.staand .mtxt .b2 { font-size:clamp(11.5px, 1.4375cqw, 18.4px); margin-top:clamp(3px, .375cqw, 4.8px); }
+  .laag.staand .mleeg { font-size:clamp(12px, 1.5cqw, 19.2px); }
+  .laag.staand .terug { height:clamp(32px, 4cqw, 51.2px); padding:0 clamp(13px, 1.625cqw, 20.8px);
+                        font-size:clamp(13px, 1.625cqw, 20.8px); }
+  .laag.staand .terug ha-icon { --mdc-icon-size:clamp(18px, 2.25cqw, 28.8px); }
+  .laag.staand .dnaam { font-size:clamp(15px, 1.875cqw, 24px); }
+  .laag.staand .dnoot { font-size:clamp(11.5px, 1.4375cqw, 18.4px); }
+  .laag.staand .mini .dlabel { font-size:clamp(10.5px, 1.3125cqw, 16.8px); }
+  .laag.staand .zijkolom { grid-template-columns:repeat(auto-fill,minmax(clamp(140px, 17.5cqw, 224px),1fr)); }
+}
 `;
 
 const SEC = 1000;
+
+// How many small tiles per row: the option that leaves the fewest empty places in
+// the last row. Fewer tiles than the smallest option still get that many columns,
+// unless they fill a narrower row exactly (two tiles under two large images).
+const kiesKolommen = (n, opties) => {
+  const kandidaten = opties.slice();
+  if (n >= 2 && n < opties[0]) kandidaten.push(n);
+  let beste = opties[opties.length - 1];
+  let besteLeeg = Infinity;
+  for (const k of kandidaten) {
+    const leeg = n ? (k - (n % k)) % k : 0;
+    if (leeg < besteLeeg || (leeg === besteLeeg && k > beste)) { beste = k; besteLeeg = leeg; }
+  }
+  return beste;
+};
 
 // The configuration keys are English. The Dutch names this card was first written
 // with keep working, so existing dashboards do not have to be rewritten. Anything
@@ -1021,17 +1070,19 @@ class TouchCameraCard extends HTMLElement {
     }
     // Stacked, the width decides how many large images fit side by side: one on a
     // phone, two on a wider upright screen. Any other camera marked large joins the
-    // small tiles, at the front. The small tiles go two to a row on a phone and
-    // four on the wider screen: two under each large image.
+    // small tiles, at the front. The small tiles go two or three to a row on a phone
+    // and three or four on the wider screen, whichever leaves the fewest gaps; on a
+    // tie the smaller tiles win. Three cameras on a tablet then fill the width
+    // instead of leaving a hole where a fourth would go.
     let nGroot = 0;
     let nKlein = 0;
     if (this._isStaand) {
       nGroot = this._staandBreed() ? 2 : 1;
-      nKlein = 2 * nGroot;
       if (groot.length > nGroot) {
         rest = groot.slice(nGroot).concat(rest);
         groot = groot.slice(0, nGroot);
       }
+      nKlein = kiesKolommen(rest.length, nGroot === 2 ? [3, 4] : [2, 3]);
       nGroot = Math.max(1, groot.length);
     }
 
@@ -1868,7 +1919,7 @@ window.customCards.push({
   preview: true,
 });
 
-console.info('%c touch-camera-card %c 1.0.5 ', 'background:#4aa3ff;color:#fff', '');
+console.info('%c touch-camera-card %c 1.2.0 ', 'background:#4aa3ff;color:#fff', '');
 
 
 // ---------------------------------------------------------------------------
